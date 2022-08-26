@@ -1,4 +1,5 @@
 import React from "react";
+import './App.css';
 
 const schedule = {
   title: "CS Courses for 2021-2022",
@@ -70,7 +71,7 @@ const Banner = ({ title }) => (
 );
 
 const CourseList = ({ courses }) => (
-  <div>
+  <div className="course-list">
     { Object.values(courses).map(course => <Course course={ course }/>) }
   </div>
 )
@@ -88,12 +89,20 @@ const getCourseName = course => (
 )
 const Course = ({ course }) => (
   <div>
-    { getCourseTerm(course) } { getCourseName(course) } { getCourseNumber(course) }: {course.title}
+    <div className="card">
+      <div className="card-body">
+        <div className="card-title">{ getCourseTerm(course) } { getCourseName(course) } { getCourseNumber(course) }</div>
+        <div className="card-text">
+          <h5>{course.title}</h5>
+          { course.meets }
+        </div>
+      </div>
+    </div>
   </div>
 );
 
 const App = () => (
-  <div>
+  <div className="container">
     <Banner title={ schedule.title }/>
     <CourseList courses={ schedule.courses }/>
   </div>
