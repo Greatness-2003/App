@@ -1,71 +1,6 @@
 import React, { useState, useEffect } from "react";
 import './App.css';
 
-const schedule = {
-  title: "William & Mary Courses for 2021-2022",
-  "courses": {
-    "FMATH112": {
-      "id": "FMATH112",
-      "meets": "TuTh 14:00-15:20",
-      "title": "Calculus II"
-    },
-    "FDATA150": {
-      "id": "FDATA150",
-      "meets": "TuTh 9:30-10:50",
-      "title": "Human Development"
-    },
-    "FCRWR212": {
-      "id": "FCRWR212",
-      "meets": "W 17:00-19:50",
-      "title": "Intro to Creative Writing"
-    },
-    "FDATA146": {
-      "id": "FDATA146",
-      "meets": "TuTh 17:00-18:20",
-      "title": "Intro to Data Science"
-    },
-    "FKINE480": {
-      "id": "FKINE480",
-      "meets": "No meeting time",
-      "title": "Research in KNHS"
-    },
-    "SFREN102": {
-      "id": "SFREN102",
-      "meets": "MTuWThF 9:00-9:50",
-      "title": "Elementary French II"
-    },
-    "SGIS201": {
-      "id": "SGIS201",
-      "meets": "MW 14:00-15:20",
-      "title": "Introduction to GIS"
-    },
-    "SPSYC202": {
-      "id": "SPSYC202",
-      "meets": "MW 15:30-16:50",
-      "title": "Intro Psy as a Social Science"
-    },
-    "SMATH104": {
-      "id": "SMATH104",
-      "meets": "MWF 8:00-8:50",
-      "title": "Math Powered Flight"
-    },
-    "SMATH351": {
-      "id": "SMATH351",
-      "meets": "TuTh 17:00-18:20",
-      "title": "Prob and Stats for Scientists"
-    },
-    "SKINE481": {
-      "id": "SKINE481",
-      "meets": "No meeting time",
-      "title": "Research in KNHS"
-    },
-    "XCSCI241": {
-      "id": "XCSCI241",
-      "meets": "MTuWTh 10:10-12:00",
-      "title": "Data Structures"
-    },
-  }
-};
 const Banner = ({ title }) => (
   <h1>{ title }</h1>
 );
@@ -91,6 +26,79 @@ const TermSelector = ({term, setTerm}) => (
 const toggle = (x, lst) => (
   lst.includes(x) ? lst.filter(y => y !== x) : [x, ...lst]
 );
+  
+const terms = { F: 'Fall', S: 'Spring', X: 'Summer', W: 'Winter'};
+const getCourseTerm = course => (
+  terms[course.id.charAt(0)]
+);
+
+const getCourseNumber = course => (
+  course.id.slice(-3)
+);
+
+const getCourseName = course => (
+  course.id.slice(1, -3)
+);
+
+const days = ['M', 'Tu', 'W', 'Th', 'F'];
+const daysOverlap = (days1, days2) => (
+  days.some(day => days1.includes(day) && days2.includes(day))
+);
+const hoursOverlap = (hours1, hours2) => (
+  Math.max(hours1.start, hours2.start) < Math.min(hours1.end, hours2.end)
+);
+const timeConflict = (course1, course2) => (
+  daysOverlap(course1.days, course2.days) && hoursOverlap(course1.hours, course2.hours)
+);
+const courseConflict = (course1, course2) => (
+  getCourseTerm(course1) === getCourseTerm(course2) && timeConflict(course1, course2)
+);
+const hasConflict = (course, selected) => (
+  selected.some(selection => courseConflict(course, selection))
+);
+
+const meetsPat = /^ *((?:M|Tu|W|Th|F)+) + (\d\d?):(\d\d) *[ -] *(\d\d?):(\d\d) *$/;
+const timeParts = meets => {
+  const [match, days, hh1, mm1, hh2, mm2] = meetsPat.exec(meets) || [];
+  return !match ? {} : {
+    days,
+    hours: {
+      start: hh1 * 60 + mm1 *1,
+      end: hh2 * 60 + mm2 * 1
+    }
+  };
+};
+
+const mapValues = (fn, obj) => (
+  Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, fn(value)]))
+);
+const addCourseTimes = course => ({
+  ...course,
+  ...timeParts(course.meets)
+});
+const addScheduleTimes = schedule => ({
+  title: schedule.title,
+  courses: mapValues(addCourseTimes, schedule.courses)
+});
+
+const Course = ({ course, selected, setSelected }) => {
+  const isSelected = selected.includes(course);
+  const isDisabled = !isSelected && hasConflict(course, selected)
+  const style = {
+    backgroundColor: isDisabled ? 'lightgrey' :  isSelected ? 'lightgreen' : 'white'
+  };
+  return (
+    <div className="card m-1 p-2"
+      style={style}
+      onClick={isDisabled ? null : () => setSelected(toggle(course, selected)) }>
+      <div className="card-body">
+        <div className="card-title">{ getCourseTerm(course) } { getCourseName(course) } { getCourseNumber(course) }</div>
+        <div className="card-text">{course.title}</div>
+        <div className="card-text">{ course.meets }</div>
+      </div>
+    </div>
+  );
+}
 
 const CourseList = ({ courses }) => {
   const [term, setTerm] = useState('Fall');
@@ -107,87 +115,27 @@ const CourseList = ({ courses }) => {
     </>
   );
 };
-  
-const terms = { F: 'Fall', S: 'Spring', X: 'Summer'};
-const getCourseTerm = course => (
-  terms[course.id.charAt(0)]
-);
 
-const getCourseNumber = course => (
-  course.id.slice(-3)
-);
-
-const getCourseName = course => (
-  course.id.slice(1, -3)
-);
-
-// const hasConflict = (course, selected) => (
-//   selected.some(Selection => courseConflict(course, selection))
-// );
-
-// const meetsPat = /^ *((?:M|Tu|W|Th|F)+) + (\d\d?):(\d\d)*[ -]*(\d\d?):(\d\d) *$/;
-// const timeParts = meets => {
-//   const [match, days, hh1, mm1, hh2, mm2] = meetsPat.exec(meets) || [];
-//   return !match ? {} : {
-//     days,
-//     hours: {
-//       start: hh1 * 60 + mm1 *1,
-//       end: hh2 * 60 + mm2 * 1
-//     }
-//   };
-// };
-
-// const mapValues = (fn, obj) => (
-//   Object.fromEntries(Object.entries(obj).map(([key, value]) => [key, fn(value)]))
-// );
-// const addCourseTimes = course => ({
-//   ...course,
-//   ...timeParts(course.meets)
-// });
-// const addScheduleTimes = schedule => ({
-//   title: schedule.title,
-//   courses: mapValues(addCourseTimes, schedule.courses)
-// });
-
-const Course = ({ course, selected, setSelected }) => {
-  const isSelected = selected.includes(course);
-  const style = {
-    backgroundColor: isSelected ? 'lightgreen' : 'white'
-  };
+const App = () => {
+  const [schedule, setSchedule] = useState();
+  const url = 'https://courses.cs.northwestern.edu/394/data/cs-courses.php';
+  useEffect(() => {
+    const fetchSchedule = async () => {
+      const response = await fetch(url);
+      if (!response.ok) throw response;
+      const json = await response.json();
+      setSchedule(addScheduleTimes(json));
+    }
+    fetchSchedule();
+  }, []);
+  if (!schedule) return <h1>Loading schedule...</h1>;
   return (
-    <div className="card m-1 p-2"
-      style={style}
-      onClick={() => setSelected(toggle(course, selected)) }>
-      <div className="card-body">
-        <div className="card-title">{ getCourseTerm(course) } { getCourseName(course) } { getCourseNumber(course) }</div>
-        <div className="card-text">{course.title}</div>
-        <div className="card-text">{ course.meets }</div>
-      </div>
-    </div>
-  );
-}
-
-
-const App = () => (
     <div className="container">
       <Banner title={ schedule.title }/>
       <CourseList courses={ schedule.courses }/>
     </div>
   );
-
+};
 
 export default App;
 
-// const [schedule, setSchedule] = useState();
-//   const url = 'https://courses.cs.northwestern.edu/394/data/cs-courses.php';
-//   useEffect(() => {
-//     const fetchSchedule = async () => {
-//       const response = await fetch(url);
-//       if (!response.ok) throw response;
-//       const json = await response.json();
-//       setSchedule(json);
-//     }
-//     fetchSchedule();
-//   }, []);
-//   if (!schedule) return <h1>Loading schedule...</h1>;
-//   return
