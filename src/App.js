@@ -9,7 +9,9 @@ const TermButton = ({term, setTerm, checked}) => (
   <>
     <input type="radio" id={term} className="btn-check" autoComplete="off" 
      checked={checked} onChange={()=> setTerm(term)} />
-    <label class="btn btn-sucess m-1 p-2" htmlFor={term}> {term}</label>
+    <label className="btn btn-sucess m-1 p-2" htmlFor={term}>
+    {term}
+    </label>
   </>
 );
 
@@ -26,18 +28,14 @@ const TermSelector = ({term, setTerm}) => (
 const toggle = (x, lst) => (
   lst.includes(x) ? lst.filter(y => y !== x) : [x, ...lst]
 );
-  
-const terms = { F: 'Fall', S: 'Spring', X: 'Summer', W: 'Winter'};
+
+const terms = { F: 'Fall', S: 'Spring', W: 'Winter'};
 const getCourseTerm = course => (
   terms[course.id.charAt(0)]
+  // course.term
 );
-
 const getCourseNumber = course => (
-  course.id.slice(-3)
-);
-
-const getCourseName = course => (
-  course.id.slice(1, -3)
+  course.id.slice(1,4)
 );
 
 const days = ['M', 'Tu', 'W', 'Th', 'F'];
@@ -51,7 +49,8 @@ const timeConflict = (course1, course2) => (
   daysOverlap(course1.days, course2.days) && hoursOverlap(course1.hours, course2.hours)
 );
 const courseConflict = (course1, course2) => (
-  getCourseTerm(course1) === getCourseTerm(course2) && timeConflict(course1, course2)
+  getCourseTerm(course1) === getCourseTerm(course2) 
+  && timeConflict(course1, course2)
 );
 const hasConflict = (course, selected) => (
   selected.some(selection => courseConflict(course, selection))
@@ -63,7 +62,7 @@ const timeParts = meets => {
   return !match ? {} : {
     days,
     hours: {
-      start: hh1 * 60 + mm1 *1,
+      start: hh1 * 60 + mm1 * 1,
       end: hh2 * 60 + mm2 * 1
     }
   };
@@ -85,20 +84,20 @@ const Course = ({ course, selected, setSelected }) => {
   const isSelected = selected.includes(course);
   const isDisabled = !isSelected && hasConflict(course, selected)
   const style = {
-    backgroundColor: isDisabled ? 'lightgrey' :  isSelected ? 'lightgreen' : 'white'
+    backgroundColor: isDisabled? 'lightgrey' :  isSelected ? 'lightgreen' : 'white'
   };
   return (
     <div className="card m-1 p-2"
       style={style}
-      onClick={isDisabled ? null : () => setSelected(toggle(course, selected)) }>
+      onClick={isDisabled ? null : () => setSelected(toggle(course, selected))}>
       <div className="card-body">
-        <div className="card-title">{ getCourseTerm(course) } { getCourseName(course) } { getCourseNumber(course) }</div>
+        <div className="card-title">{ getCourseTerm(course) } CS { getCourseNumber(course) }</div>
         <div className="card-text">{course.title}</div>
         <div className="card-text">{ course.meets }</div>
       </div>
     </div>
   );
-}
+};
 
 const CourseList = ({ courses }) => {
   const [term, setTerm] = useState('Fall');
@@ -109,7 +108,7 @@ const CourseList = ({ courses }) => {
       <TermSelector term={term} setTerm={setTerm} />
       <div className="course-list">
       { termCourses.map(course => 
-        <Course key={course.id} course={ course } selected={selected} setSelected={ setSelected}
+        <Course key={course.id} course={ course } selected={selected} setSelected={ setSelected }
         />) }
       </div>
     </>
